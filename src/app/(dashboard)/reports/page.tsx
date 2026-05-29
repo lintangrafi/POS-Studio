@@ -75,7 +75,8 @@ export default function ReportsPage() {
     }
   };
 
-  const formatTooltipValue = (value: number) => formatCurrency(value);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const formatTooltipValue = (value: any) => formatCurrency(Number(value));
 
   const exportCSV = () => {
     if (!report) return;
