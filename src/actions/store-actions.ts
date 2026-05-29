@@ -4,7 +4,9 @@ import { db } from '@/db';
 import { storeSettings } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { requireAdmin } from '@/lib/auth';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
+import { unstable_cache } from 'next/cache';
+import { CACHE_TAGS, CACHE_DURATION } from '@/lib/cache';
 
 export type StoreTheme = 'indigo' | 'emerald' | 'rose' | 'amber' | 'violet' | 'sky';
 
@@ -16,11 +18,19 @@ export interface StoreSettingsData {
   theme: StoreTheme;
 }
 
+const getCachedStoreSettings = unstable_cache(
+  async () => {
+    return db.query.storeSettings.findFirst();
+  },
+  ['store-settings'],
+  { tags: [CACHE_TAGS.storeSettings], revalidate: CACHE_DURATION.long }
+);
+
 /**
  * Get store settings (public — no auth required for display)
  */
 export async function getStoreSettings(): Promise<StoreSettingsData> {
-  const settings = await db.query.storeSettings.findFirst();
+  const settings = await getCachedStoreSettings();
 
   if (!settings) {
     // Create default settings if none exist
@@ -92,6 +102,7 @@ export async function updateStoreSettings(payload: {
     }).where(eq(storeSettings.id, existing.id));
   }
 
+  revalidateTag(CACHE_TAGS.storeSettings);
   revalidatePath('/', 'layout');
   return { success: true };
 }

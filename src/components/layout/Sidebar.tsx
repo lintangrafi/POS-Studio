@@ -16,6 +16,8 @@ import {
   LogOut,
   Menu,
   X,
+  Wallet,
+  Tag,
 } from 'lucide-react';
 import { logoutAction } from '@/actions/auth-actions';
 import { useState, useEffect, useCallback } from 'react';
@@ -36,9 +38,11 @@ const NAV_ITEMS = [
   { href: '/pos', label: 'Kasir', icon: ShoppingCart, roles: ['CASHIER', 'ADMIN', 'SUPERADMIN'] },
   { href: '/shift', label: 'Shift', icon: Clock, roles: ['CASHIER', 'ADMIN', 'SUPERADMIN'] },
   { href: '/inventory', label: 'Inventori', icon: Package, roles: ['ADMIN', 'SUPERADMIN'] },
+  { href: '/expenses', label: 'Keuangan', icon: Wallet, roles: ['ADMIN', 'SUPERADMIN'] },
   { href: '/reports', label: 'Laporan', icon: BarChart3, roles: ['ADMIN', 'SUPERADMIN'] },
   { href: '/invoices', label: 'Invoice', icon: FileText, roles: ['ADMIN', 'SUPERADMIN'] },
   { href: '/settings', label: 'Pengaturan', icon: Settings, roles: ['ADMIN', 'SUPERADMIN'] },
+  { href: '/settings/coupons', label: 'Kupon', icon: Tag, roles: ['ADMIN', 'SUPERADMIN'] },
   { href: '/settings/customize', label: 'Kustomisasi', icon: Palette, roles: ['ADMIN', 'SUPERADMIN'] },
 ];
 

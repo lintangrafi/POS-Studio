@@ -9,6 +9,23 @@ function toDateKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
+function toWeekKey(date: Date): string {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - d.getDay() + 1); // Monday
+  return toDateKey(d);
+}
+
+function toMonthKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function toYearKey(date: Date): string {
+  return `${date.getFullYear()}`;
+}
+
+export type PeriodType = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
 interface ReportParams {
   from: Date;
   to: Date;
@@ -86,6 +103,79 @@ export async function getFinancialReport({ from, to }: ReportParams) {
     expenses: expensesInRange,
     incomes: incomesInRange,
   };
+}
+
+export async function getChartData({ from, to, period }: ReportParams & { period: PeriodType }) {
+  await requireAdmin();
+
+  const keyFn = period === 'daily' ? toDateKey
+    : period === 'weekly' ? toWeekKey
+    : period === 'monthly' ? toMonthKey
+    : toYearKey;
+
+  // Fetch orders
+  const ordersInRange = await db.query.orders.findMany({
+    where: and(
+      gte(orders.createdAt, from),
+      lt(orders.createdAt, to),
+      eq(orders.status, 'COMPLETED')
+    ),
+    with: { items: true, payments: true },
+  });
+
+  // Fetch expenses
+  const expensesInRange = await db.query.expenses.findMany({
+    where: and(gte(expenses.date, from), lt(expenses.date, to)),
+  });
+
+  // Fetch incomes
+  const incomesInRange = await db.query.incomes.findMany({
+    where: and(gte(incomes.date, from), lt(incomes.date, to)),
+  });
+
+  // Aggregate by period
+  const revenueByPeriod: Record<string, number> = {};
+  const expenseByPeriod: Record<string, number> = {};
+  const incomeByPeriod: Record<string, number> = {};
+  const profitByPeriod: Record<string, number> = {};
+
+  for (const o of ordersInRange) {
+    const key = keyFn(o.createdAt);
+    const paid = (o.payments || []).reduce((s, p) => s + Number(p.amount), 0);
+    revenueByPeriod[key] = (revenueByPeriod[key] || 0) + paid;
+  }
+
+  for (const e of expensesInRange) {
+    const key = keyFn(e.date);
+    expenseByPeriod[key] = (expenseByPeriod[key] || 0) + Number(e.amount);
+  }
+
+  for (const i of incomesInRange) {
+    const key = keyFn(i.date);
+    incomeByPeriod[key] = (incomeByPeriod[key] || 0) + Number(i.amount);
+  }
+
+  // Collect all keys and sort
+  const allKeys = [...new Set([
+    ...Object.keys(revenueByPeriod),
+    ...Object.keys(expenseByPeriod),
+    ...Object.keys(incomeByPeriod),
+  ])].sort();
+
+  const chartData = allKeys.map((key) => {
+    const revenue = revenueByPeriod[key] || 0;
+    const expense = expenseByPeriod[key] || 0;
+    const income = incomeByPeriod[key] || 0;
+    return {
+      period: key,
+      revenue,
+      expense,
+      income,
+      profit: revenue - expense + income,
+    };
+  });
+
+  return chartData;
 }
 
 export async function getTopProducts({ from, to, limit = 10 }: ReportParams & { limit?: number }) {

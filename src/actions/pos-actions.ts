@@ -31,6 +31,7 @@ interface CheckoutPayload {
   totalAmount: number;
   customerName?: string;
   note?: string;
+  couponCode?: string;
 }
 
 // ─── Get POS Data ────────────────────────────────────────────────────────────
@@ -112,6 +113,7 @@ export async function processCheckout(data: CheckoutPayload) {
         discountAmount: data.discountAmount.toString(),
         totalAmount: data.totalAmount.toString(),
         note: data.note || null,
+        couponCode: data.couponCode || null,
         status: 'COMPLETED',
       }).returning();
 
@@ -163,6 +165,14 @@ export async function processCheckout(data: CheckoutPayload) {
 
       return newOrder;
     });
+
+    // Increment coupon usage if used
+    if (data.couponCode) {
+      try {
+        const { incrementCouponUsage } = await import('./coupon-actions');
+        await incrementCouponUsage(data.couponCode);
+      } catch (e) { /* non-critical */ }
+    }
 
     return {
       success: true,

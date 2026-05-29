@@ -71,6 +71,7 @@ export const orders = pgTable('orders', {
   voidReason: text('void_reason'),
   voidedBy: integer('voided_by').references(() => users.id),
   voidedAt: timestamp('voided_at'),
+  couponCode: text('coupon_code'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -197,6 +198,24 @@ export const storeSettings = pgTable('store_settings', {
   logoInitial: text('logo_initial').notNull().default('S'),
   theme: text('theme').notNull().default('indigo'), // indigo, emerald, rose, amber, violet, sky
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// ─── Coupons ─────────────────────────────────────────────────────────────────
+
+export const coupons = pgTable('coupons', {
+  id: serial('id').primaryKey(),
+  code: text('code').notNull().unique(),
+  description: text('description'),
+  discountType: text('discount_type').notNull().default('FIXED'), // FIXED or PERCENT
+  discountValue: decimal('discount_value', { precision: 12, scale: 2 }).notNull(),
+  minPurchase: decimal('min_purchase', { precision: 12, scale: 2 }).notNull().default('0'),
+  maxDiscount: decimal('max_discount', { precision: 12, scale: 2 }), // Max discount for PERCENT type
+  usageLimit: integer('usage_limit'), // null = unlimited
+  usageCount: integer('usage_count').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  validFrom: timestamp('valid_from'),
+  validUntil: timestamp('valid_until'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
 // ─── Audit Logs ──────────────────────────────────────────────────────────────

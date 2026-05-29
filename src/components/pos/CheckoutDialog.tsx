@@ -24,6 +24,7 @@ interface CheckoutDialogProps {
   discountValue: number;
   discountAmount: number;
   total: number;
+  couponCode?: string;
 }
 
 const METHODS: { value: PaymentMethod; label: string; icon: React.ElementType }[] = [
@@ -32,7 +33,7 @@ const METHODS: { value: PaymentMethod; label: string; icon: React.ElementType }[
   { value: 'TRANSFER', label: 'Transfer', icon: CreditCard },
 ];
 
-export function CheckoutDialog({ open, onClose, subtotal, discountType, discountValue, discountAmount, total }: CheckoutDialogProps) {
+export function CheckoutDialog({ open, onClose, subtotal, discountType, discountValue, discountAmount, total, couponCode }: CheckoutDialogProps) {
   const { cart, clearCart } = usePosStore();
   const [payments, setPayments] = useState<PaymentEntry[]>([{ method: 'CASH', amount: total }]);
   const [processing, setProcessing] = useState(false);
@@ -86,6 +87,7 @@ export function CheckoutDialog({ open, onClose, subtotal, discountType, discount
       discountValue,
       discountAmount,
       totalAmount: total,
+      couponCode,
     });
 
     setProcessing(false);
