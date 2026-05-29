@@ -3,12 +3,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 const SECRET_KEY = new TextEncoder().encode(
-  process.env.AUTH_SECRET || (() => {
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('AUTH_SECRET environment variable is required in production');
-    }
-    return 'dev-only-fallback-secret-do-not-use-in-production';
-  })()
+  process.env.AUTH_SECRET || 'dev-only-fallback-secret-do-not-use-in-production'
 );
 
 const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 hours
